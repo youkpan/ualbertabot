@@ -56,10 +56,10 @@ const bool StrategyManager::shouldExpandNow() const
                         + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
                         + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
 	int frame           = BWAPI::Broodwar->getFrameCount();
-    int minute          = frame / (24*60);
+    float minute          = frame / (24*60);
 
 	// if we have a ton of idle workers then we need a new expansion
-	if (WorkerManager::Instance().getNumIdleWorkers() > 10)
+	if (WorkerManager::Instance().getNumIdleWorkers() > 7)
 	{
 		return true;
 	}
@@ -71,7 +71,7 @@ const bool StrategyManager::shouldExpandNow() const
     }
 
     // we will make expansion N after array[N] minutes have passed
-    std::vector<int> expansionTimes = {5, 10, 20, 30, 40 , 50};
+	std::vector<float> expansionTimes = { 4, 7, 11, 14, 15, 16, 18, 22, 26, 29, 34 };
 
     for (size_t i(0); i < expansionTimes.size(); ++i)
     {
@@ -125,6 +125,12 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
     int numScout            = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Corsair);
     int numReaver           = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Reaver);
     int numDarkTeplar       = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Dark_Templar);
+	int Zerg_Mutalisk_num = InformationManager::Instance().getNumUnits(BWAPI::UnitTypes::Zerg_Mutalisk, BWAPI::Broodwar->enemy());
+	numDragoons += (int)( Zerg_Mutalisk_num * 2);
+	goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dragoon, numDragoons));
+
+	int frame = BWAPI::Broodwar->getFrameCount();
+	float minute = frame / (24 * 60);
 
     if (Config::Strategy::StrategyName == "Protoss_ZealotRush")
     {
@@ -174,7 +180,7 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
     }
     
     // add observer to the goal if the enemy has cloaked units
-	if (InformationManager::Instance().enemyHasCloakedUnits())
+	if (InformationManager::Instance().enemyHasCloakedUnits() || minute >11)
 	{
 		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Robotics_Facility, 1));
 		
@@ -188,10 +194,25 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
 		}
 	}
 
+
     // if we want to expand, insert a nexus into the build order
 	if (shouldExpandNow())
 	{
 		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Nexus, numNexusAll + 1));
+		if (numNexusAll ==2)
+		{
+			numProbes += 4;
+		}
+		else if (numNexusAll ==3)
+		{
+			numProbes += 7;
+		}
+		else 
+		{
+			numProbes += 10;
+		}
+
+		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Probe, numProbes ));
 	}
 
 	return goal;

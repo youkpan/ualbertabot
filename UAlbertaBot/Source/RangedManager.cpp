@@ -170,7 +170,7 @@ int RangedManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target)
 
     if (target->getType().isBuilding() && (target->isCompleted() || target->isBeingConstructed()) && target->getDistance(ourBasePosition) < 1200)
     {
-        return 90;
+		return 10;
     }
     
 	// highest priority is something that can attack us or aid in combat

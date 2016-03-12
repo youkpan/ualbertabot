@@ -244,7 +244,7 @@ void CombatCommander::updateDefenseSquads()
     BWTA::Region * enemyRegion = nullptr;
     if (enemyBaseLocation)
     {
-		enemyRegion = BWTA::getRegion((BWAPI::TilePosition)enemyBaseLocation->getPosition());
+        enemyRegion = BWTA::getRegion(enemyBaseLocation->getPosition());
     }
 
 	// for each of our occupied regions
@@ -456,8 +456,7 @@ BWAPI::Unit CombatCommander::findClosestDefender(const Squad & defenseSquad, BWA
 
 BWAPI::Position CombatCommander::getDefendLocation()
 {
-	BWAPI::Player tmp = BWAPI::Broodwar->self();
-	return BWTA::getRegion(BWTA::getStartLocation(tmp)->getTilePosition())->getCenter();
+	return BWTA::getRegion(BWTA::getStartLocation(BWAPI::Broodwar->self())->getTilePosition())->getCenter();
 }
 
 void CombatCommander::drawSquadInformation(int x, int y)
@@ -565,9 +564,8 @@ BWAPI::Unit CombatCommander::findClosestWorkerToTarget(BWAPI::Unitset & unitsToA
 // this function can only be called if we have no fighters to defend with
 int CombatCommander::defendWithWorkers()
 {
-	BWAPI::Player tmp = BWAPI::Broodwar->self();
 	// our home nexus position
-	BWAPI::Position homePosition = BWTA::getStartLocation(tmp)->getPosition();;
+	BWAPI::Position homePosition = BWTA::getStartLocation(BWAPI::Broodwar->self())->getPosition();;
 
 	// enemy units near our workers
 	int enemyUnitsNearWorkers = 0;

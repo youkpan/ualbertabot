@@ -281,7 +281,7 @@ BWAPI::Unit ScoutManager::getEnemyGeyser()
 
 	for (auto & unit : enemyBaseLocation->getGeysers())
 	{
-		geyser = (BWAPI::Unit)unit;
+		geyser = unit;
 	}
 
 	return geyser;
