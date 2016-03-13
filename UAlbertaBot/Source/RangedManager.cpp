@@ -104,6 +104,7 @@ BWAPI::Unit RangedManager::getTarget(BWAPI::Unit rangedUnit, const BWAPI::Unitse
     int highPriority = 0;
 	double closestDist = std::numeric_limits<double>::infinity();
 	BWAPI::Unit closestTarget = nullptr;
+	BWAPI::Unit last_closestTarget = nullptr;
 
     for (const auto & target : targets)
     {
@@ -112,15 +113,22 @@ BWAPI::Unit RangedManager::getTarget(BWAPI::Unit rangedUnit, const BWAPI::Unitse
         int priority            = getAttackPriority(rangedUnit, target);
         bool targetIsThreat     = LTD > 0;
         
-		if (!closestTarget || (priority > highPriority) || (priority == highPriority && distance < closestDist))
+		if ((!closestTarget || (priority > highPriority) || (priority == highPriority && distance < closestDist)))
 		{
+			last_closestTarget = closestTarget;
 			closestDist = distance;
 			highPriority = priority;
 			closestTarget = target;
 		}       
-    }
 
-    return closestTarget;
+    }
+	return closestTarget;
+
+	if (BWAPI::Broodwar->getFrameCount() % 100 >1 || last_closestTarget == nullptr)
+		return closestTarget;
+	else
+		return last_closestTarget;
+
 }
 
 	// get the attack priority of a type in relation to a zergling
@@ -168,11 +176,23 @@ int RangedManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target)
         return 100;
     }
 
+
+	if (targetType == BWAPI::UnitTypes::Zerg_Hatchery || targetType == BWAPI::UnitTypes::Terran_Command_Center
+		|| targetType == BWAPI::UnitTypes::Protoss_Nexus)
+	{
+		return 10;
+	}
+
+	if ( targetType == BWAPI::UnitTypes::Zerg_Lair ||targetType == BWAPI::UnitTypes::Zerg_Hive	)
+	{
+		return 10;
+	}
+
     if (target->getType().isBuilding() && (target->isCompleted() || target->isBeingConstructed()) && target->getDistance(ourBasePosition) < 1200)
     {
 		return 10;
     }
-    
+	//BWAPI::Broodwar->printf("debug in ranged getAttackPriority");
 	// highest priority is something that can attack us or aid in combat
     if (targetType ==  BWAPI::UnitTypes::Terran_Bunker || isThreat)
     {
@@ -181,11 +201,12 @@ int RangedManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target)
 	// next priority is worker
 	else if (targetType.isWorker()) 
 	{
+		//أӥ buleiche
         if (rangedUnit->getType() == BWAPI::UnitTypes::Terran_Vulture)
         {
             return 11;
         }
-
+		
   		return 11;
 	}
     // next is special buildings

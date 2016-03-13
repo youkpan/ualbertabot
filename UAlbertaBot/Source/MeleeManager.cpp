@@ -101,6 +101,7 @@ BWAPI::Unit MeleeManager::getTarget(BWAPI::Unit meleeUnit, const BWAPI::Unitset 
 	int highPriority = 0;
 	double closestDist = std::numeric_limits<double>::infinity();
 	BWAPI::Unit closestTarget = nullptr;
+	BWAPI::Unit last_closestTarget = nullptr;
 
 	// for each target possiblity
 	for (auto & unit : targets)
@@ -111,19 +112,25 @@ BWAPI::Unit MeleeManager::getTarget(BWAPI::Unit meleeUnit, const BWAPI::Unitset 
 		// if it's a higher priority, or it's closer, set it
 		if (!closestTarget || (priority > highPriority) || (priority == highPriority && distance < closestDist))
 		{
+			last_closestTarget = closestTarget;
 			closestDist = distance;
 			highPriority = priority;
 			closestTarget = unit;
 		}
 	}
-
 	return closestTarget;
+
+	if (BWAPI::Broodwar->getFrameCount() % 100 >1 || last_closestTarget == nullptr)
+		return closestTarget;
+	else
+		return last_closestTarget;
 }
 
 	// get the attack priority of a type in relation to a zergling
 int MeleeManager::getAttackPriority(BWAPI::Unit attacker, BWAPI::Unit unit) 
 {
 	BWAPI::UnitType type = unit->getType();
+
 
     if (attacker->getType() == BWAPI::UnitTypes::Protoss_Dark_Templar 
         && unit->getType() == BWAPI::UnitTypes::Terran_Missile_Turret
@@ -135,6 +142,15 @@ int MeleeManager::getAttackPriority(BWAPI::Unit attacker, BWAPI::Unit unit)
 	if (attacker->getType() == BWAPI::UnitTypes::Protoss_Dark_Templar && unit->getType().isWorker())
 	{
 		return 12;
+	}
+	if (type == BWAPI::UnitTypes::Zerg_Hatchery || type == BWAPI::UnitTypes::Terran_Command_Center 
+		|| type == BWAPI::UnitTypes::Protoss_Nexus)
+	{
+		return 10;
+	}
+	if (type == BWAPI::UnitTypes::Zerg_Lair || type == BWAPI::UnitTypes::Zerg_Hive)
+	{
+		return 9;
 	}
 
 	// highest priority is something that can attack us or aid in combat
@@ -154,7 +170,7 @@ int MeleeManager::getAttackPriority(BWAPI::Unit attacker, BWAPI::Unit unit)
 	// next priority is worker
 	else if (type.isWorker()) 
 	{
-		return 9;
+		return 10;
 	}
     // next is special buildings
 	else if (type == BWAPI::UnitTypes::Zerg_Spawning_Pool)

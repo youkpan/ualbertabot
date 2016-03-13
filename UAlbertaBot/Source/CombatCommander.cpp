@@ -425,6 +425,9 @@ BWAPI::Unit CombatCommander::findClosestDefender(const Squad & defenseSquad, BWA
     int zerglingsInOurBase = numZerglingsInOurBase();
     bool zerglingRush = zerglingsInOurBase > 0 && BWAPI::Broodwar->getFrameCount() < 5000;
 
+	int frame = BWAPI::Broodwar->getFrameCount();
+	float minute = frame / (24 * 60);
+
 	for (auto & unit : _combatUnits) 
 	{
 		if ((flyingDefender && !UnitUtil::CanAttackAir(unit)) || (!flyingDefender && !UnitUtil::CanAttackGround(unit)))
@@ -438,7 +441,8 @@ BWAPI::Unit CombatCommander::findClosestDefender(const Squad & defenseSquad, BWA
         }
 
         // add workers to the defense squad if we are being rushed very quickly
-        if (!Config::Micro::WorkersDefendRush || (unit->getType().isWorker() && !zerglingRush && !beingBuildingRushed()))
+        if (!Config::Micro::WorkersDefendRush || (unit->getType().isWorker() && !zerglingRush && !beingBuildingRushed())
+			|| minute>5 )
         {
             continue;
         }

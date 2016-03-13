@@ -65,13 +65,13 @@ const bool StrategyManager::shouldExpandNow() const
 	}
 
     // if we have a ridiculous stockpile of minerals, expand
-    if (BWAPI::Broodwar->self()->minerals() > 3000)
+    if (BWAPI::Broodwar->self()->minerals() > 1000)
     {
         return true;
     }
 
     // we will make expansion N after array[N] minutes have passed
-	std::vector<float> expansionTimes = { 4, 7, 11, 14, 15, 16, 18, 22, 26, 29, 34 };
+	std::vector<float> expansionTimes = { 4, 9, 12, 14, 15, 16, 18, 22, 26, 29, 34 };
 
     for (size_t i(0); i < expansionTimes.size(); ++i)
     {
@@ -114,20 +114,37 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
 	// the goal to return
 	MetaPairVector goal;
 
-	int numZealots          = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Zealot);
-    int numPylons           = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Pylon);
-	int numDragoons         = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Dragoon);
-	int numProbes           = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Probe);
-	int numNexusCompleted   = BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Nexus);
-	int numNexusAll         = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Nexus);
-	int numCyber            = BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Cybernetics_Core);
-	int numCannon           = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Photon_Cannon);
-    int numScout            = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Corsair);
-    int numReaver           = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Reaver);
-    int numDarkTeplar       = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Dark_Templar);
+	static int last_numNexusAll =1 ;
+	static int Protoss_Probe_update = 1;
+
+	int numZealots = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Zealot);
+	int numPylons = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Pylon);
+	int numDragoons = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Dragoon);
+	int numProbes = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Probe);
+	int numNexusCompleted = BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Nexus);
+	int numNexusAll = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Nexus);
+	int numCyber = BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Cybernetics_Core);
+	int numCannon = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+	int numScout = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Corsair);
+	int numReaver = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Reaver);
+	int numDarkTeplar = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Dark_Templar);
+
 	int Zerg_Mutalisk_num = InformationManager::Instance().getNumUnits(BWAPI::UnitTypes::Zerg_Mutalisk, BWAPI::Broodwar->enemy());
-	numDragoons += (int)( Zerg_Mutalisk_num * 2);
-	goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dragoon, numDragoons));
+	if (!Zerg_Mutalisk_num)
+		Zerg_Mutalisk_num = BWAPI::Broodwar->enemy()->completedUnitCount(BWAPI::UnitTypes::Zerg_Mutalisk);
+	int Zerg_Spire_num = InformationManager::Instance().getNumUnits(BWAPI::UnitTypes::Zerg_Spire, BWAPI::Broodwar->enemy());
+	if (!Zerg_Spire_num)
+		Zerg_Spire_num = BWAPI::Broodwar->enemy()->completedUnitCount(BWAPI::UnitTypes::Zerg_Spire);
+	if (Zerg_Mutalisk_num > 0 || Zerg_Spire_num >0)
+	{
+		BWAPI::Broodwar->printf("debug in Zerg_Mutalisk_num:%d ,Zerg_Spire_num 1", Zerg_Mutalisk_num);
+		numDragoons += (int)(Zerg_Mutalisk_num *2 );
+		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dragoon, numDragoons));
+		if (numCannon < numNexusAll *2){
+			goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Photon_Cannon, numCannon + 2));
+			//BWAPI::Broodwar->printf("bulid Protoss_Dragoon ", numCannon + 2);
+		}
+	}
 
 	int frame = BWAPI::Broodwar->getFrameCount();
 	float minute = frame / (24 * 60);
@@ -142,6 +159,7 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
             goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dragoon, numDragoons + 4));
         }
     }
+
     else if (Config::Strategy::StrategyName == "Protoss_DragoonRush")
     {
         goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dragoon, numDragoons + 6));
@@ -199,21 +217,36 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
 	if (shouldExpandNow())
 	{
 		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Nexus, numNexusAll + 1));
-		if (numNexusAll ==2)
+		if (Protoss_Probe_update)
+		{
+			goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Probe, numProbes + 7));
+			Protoss_Probe_update = 0;
+		}
+	}
+
+	//new buiding of nexus 
+	if (last_numNexusAll != numNexusAll)
+	{
+		//Protoss_Probe_update = 1;
+		if (numNexusAll == 2)
 		{
 			numProbes += 4;
 		}
-		else if (numNexusAll ==3)
-		{
-			numProbes += 7;
-		}
-		else 
+		else if (numNexusAll == 3)
 		{
 			numProbes += 10;
 		}
+		else if (numNexusAll > 3)
+		{
+			numProbes += 15;
+		}
 
-		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Probe, numProbes ));
+		goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Probe, numProbes));
+
+		last_numNexusAll = numNexusAll;
 	}
+
+	
 
 	return goal;
 }

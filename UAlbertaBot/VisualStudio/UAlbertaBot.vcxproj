@@ -112,6 +112,9 @@
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateMapFile>true</GenerateMapFile>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y  G:\ualbertabot\UAlbertaBot\bin\UAlbertaBot.dll G:\StarcraftAITournamentManager\server\bots\UAlbertaBot\AI</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Source\AutoObserver.cpp" />
